@@ -10,12 +10,16 @@ async def on_new_member(message: Message):
         if member.is_bot:
             continue
         await message.answer(f"👋 Добро пожаловать, {member.full_name}!")
+    # Автоматизация: убираем служебное «X вступил в группу»
+    try:
+        await message.delete()
+    except Exception:
+        pass
 
 
 @router.chat_member()
 async def on_member_update(event: ChatMemberUpdated):
-    """Telegram ненадёжно присылает сервисное сообщение left_chat_member,
-    поэтому уход участника ловим через обновление его статуса."""
+    """Уход участника ловим через смену статуса (left_chat_member ненадёжен)."""
     old, new = event.old_chat_member, event.new_chat_member
     if new.user.is_bot:
         return

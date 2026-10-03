@@ -18,3 +18,14 @@ async def cmd_start(message: Message):
         "Я бот-модератор. Выберите функцию:",
         reply_markup=main_menu(is_admin=is_admin, premium=premium),
     )
+
+
+@router.message(Command("myid"))
+async def cmd_myid(message: Message):
+    await message.answer(
+        f"🆔 <b>Ваш ID:</b> <code>{message.from_user.id}</code>",
+        reply_markup=main_menu(
+            is_admin=message.from_user.id in ADMIN_IDS,
+            premium=message.from_user.id in ADMIN_IDS or await is_premium(message.chat.id),
+        ),
+    )
