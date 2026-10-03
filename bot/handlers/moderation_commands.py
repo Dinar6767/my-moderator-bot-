@@ -4,7 +4,13 @@ from aiogram import Router, F
 from aiogram.filters import Command, CommandObject
 from aiogram.types import Message, ChatPermissions
 
-from database.models import get_or_create_user, add_warning
+from core.config import ADMIN_IDS
+from database.models import (
+    get_or_create_user,
+    add_warning,
+    get_user,
+    reset_warnings,
+)
 
 router = Router()
 router.message.filter(F.chat.type.in_({"group", "supergroup"}))
@@ -153,3 +159,70 @@ async def cmd_unban(message: Message, command: CommandObject):
     user_id = int(command.args.strip())
     await message.bot.unban_chat_member(message.chat.id, user_id)
     await message.answer(f"✅ Пользователь {user_id} разбанен.")
+
+
+# /warnings — посмотреть предупреждения пользователя
+@router.message(Command("warnings"))
+async def cmd_warnings(message: Message):
+    target = await get_target(message)
+    if not target:
+        await message.answer("ℹ️ Ответьте на сообщение пользователя, чтобы увидеть его предупреждения.")
+        return
+
+    user = await get_user(target.id)
+    count = user["warnings"] if user else 0
+    await message.answer(f"⚠️ У {target.full_name}: {count}/{MAX_WARNINGS} предупреждений.")
+
+
+# /unwarn — сбросить предупреждения пользователя
+@router.message(Command("unwarn"))
+async def cmd_unwarn(message: Message):
+    if not await is_admin(message):
+        return
+
+    target = await get_target(message)
+    if not target:
+        await message.answer("⚠️ Ответьте на сообщение пользователя, чьи предупреждения нужно сбросить.")
+        return
+
+    await reset_warnings(target.id)
+    await message.answer(f"✅ Предупреждения {target.full_name} сброшены.")
+
+
+# /report — жалоба на сообщение администраторам
+@router.message(Command("report"))
+async def cmd_report(message: Message):
+    if not message.reply_to_message:
+        await message.answer("🚩 Ответьте на сообщение, на которое хотите пожаловаться.")
+        return
+
+    reported = message.reply_to_message
+    if not reported.from_user:
+        await message.answer("🚩 На это сообщение пожаловаться нельзя.")
+        return
+
+    if reported.from_user.id == message.from_user.id:
+        await message.answer("🚩 Нельзя жаловаться на самого себя.")
+        return
+
+    chat_title = message.chat.title or "чат"
+    text = (
+        f"🚩 <b>Жалоба</b>\n\n"
+        f"<b>Чат:</b> {chat_title}\n"
+        f"<b>От:</b> {message.from_user.full_name} (id <code>{message.from_user.id}</code>)\n"
+        f"<b>На:</b> {reported.from_user.full_name} (id <code>{reported.from_user.id}</code>)\n\n"
+        f"Оригинальное сообщение переслано ниже."
+    )
+    sent = 0
+    for admin_id in ADMIN_IDS:
+        try:
+            await message.bot.send_message(admin_id, text)
+            await message.bot.forward_message(admin_id, message.chat.id, reported.message_id)
+            sent += 1
+        except Exception:
+            pass
+
+    if sent:
+        await message.answer("🚩 Жалоба отправлена администраторам.")
+    else:
+        await message.answer("⚠️ Не удалось доставить жалобу — администраторы не найдены.")

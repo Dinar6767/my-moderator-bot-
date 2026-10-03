@@ -1,3 +1,3 @@
-from bot.handlers import start, admin, moderation, moderation_commands, support, premium
+from bot.handlers import start, admin, moderation, moderation_commands, support, premium, donate
 
-__all__ = ["start", "admin", "moderation", "moderation_commands", "support", "premium"]
+__all__ = ["start", "admin", "moderation", "moderation_commands", "support", "premium", "donate"]

@@ -16,6 +16,7 @@ def main_menu(is_admin: bool = False, premium: bool = False) -> ReplyKeyboardMar
     rows.append([KeyboardButton(text="⭐ Премиум"), KeyboardButton(text="🎯 Поддержка")])
     if is_admin or premium:
         rows.append([KeyboardButton(text="📈 Расширенная статистика")])
+    rows.append([KeyboardButton(text="💰 Донат")])
     rows.append([KeyboardButton(text="🏠 Старт")])
     return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
@@ -51,6 +52,15 @@ def premium_inline_menu(is_admin: bool = False) -> InlineKeyboardMarkup:
             )
         ])
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def donate_inline_menu() -> InlineKeyboardMarkup:
+    """Выбор суммы доната в Telegram Stars."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="☕ 50 ⭐ — угостить кофе", callback_data="donate_50")],
+        [InlineKeyboardButton(text="⭐ 100 ⭐ — поддержать", callback_data="donate_100")],
+        [InlineKeyboardButton(text="🚀 250 ⭐ — большой вклад", callback_data="donate_250")],
+    ])
 
 
 def support_menu() -> ReplyKeyboardMarkup:

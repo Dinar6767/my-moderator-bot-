@@ -5,8 +5,17 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from bot.handlers import start, admin, moderation, moderation_commands, support, premium
+from bot.handlers import (
+    start,
+    admin,
+    moderation,
+    moderation_commands,
+    support,
+    premium,
+    donate,
+)
 from bot.middlewares.antiflood import AntiFloodMiddleware
+from bot.middlewares.db_logger import DbLoggerMiddleware
 from core.config import BOT_TOKEN
 from core.logger import setup_logger
 from database.session import init_db, close_db
@@ -25,6 +34,7 @@ async def main() -> None:
     dp = Dispatcher(storage=MemoryStorage())
 
     dp.message.middleware(AntiFloodMiddleware(max_messages=5, window=10))
+    dp.message.middleware(DbLoggerMiddleware())
 
     dp.include_router(start.router)
     dp.include_router(admin.router)
@@ -32,6 +42,7 @@ async def main() -> None:
     dp.include_router(moderation.router)
     dp.include_router(support.router)
     dp.include_router(premium.router)
+    dp.include_router(donate.router)
 
     log.info("Бот запущен. Polling...")
     try:

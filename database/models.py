@@ -126,3 +126,16 @@ async def get_premium_until(chat_id: int):
             chat_id,
         )
         return row["until_date"] if row else None
+async def get_user(user_id: int) -> dict | None:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("SELECT * FROM users WHERE user_id = $1", user_id)
+        return dict(row) if row else None
+
+
+async def reset_warnings(user_id: int) -> None:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE users SET warnings = 0 WHERE user_id = $1", user_id
+        )
