@@ -1,14 +1,11 @@
 from aiogram import Router, F
-from aiogram.types import CallbackQuery, LabeledPrice
+from aiogram.types import CallbackQuery
 
 from bot.keyboards.inline import premium_inline_menu
 from core.config import ADMIN_IDS
 from database.models import is_premium, get_premium_until, activate_premium
 
 router = Router()
-
-PREMIUM_PRICE = 250      # Telegram Stars
-PREMIUM_DAYS = 30
 
 
 @router.callback_query(F.data == "premium")
@@ -21,10 +18,9 @@ async def cb_premium(callback: CallbackQuery):
     text = "⭐ <b>Премиум-подписка</b>\n\n"
     text += "Что входит:\n"
     text += "• 📈 Расширенная статистика\n"
-    text += "• 🧾 Личная статистика\n"
     text += "• 🔧 Кастомные фильтры\n"
     text += "• 🎯 Приоритетная поддержка\n\n"
-    text += f"<b>Стоимость:</b> {PREMIUM_PRICE} ⭐ в месяц\n\n"
+    text += "<b>Стоимость:</b> 250 ⭐ в месяц\n\n"
 
     if premium and until:
         text += f"✅ <b>Активна до:</b> {until.strftime('%d.%m.%Y')}"
@@ -39,27 +35,26 @@ async def cb_premium(callback: CallbackQuery):
 
 @router.callback_query(F.data == "premium_pay")
 async def cb_premium_pay(callback: CallbackQuery):
-    """Оплата премиума — инвойс Telegram Stars, как у доната."""
-    await callback.message.answer_invoice(
-        title="⭐ Премиум-подписка",
-        description=(
-            f"Премиум-функции бота на {PREMIUM_DAYS} дней: расширенная "
-            "статистика, личная статистика, фильтры, приоритетная поддержка."
-        ),
-        payload=f"premium_{PREMIUM_DAYS}",
-        currency="XTR",
-        prices=[LabeledPrice(label=f"Премиум {PREMIUM_DAYS} дней", amount=PREMIUM_PRICE)],
+    if callback.from_user.id in ADMIN_IDS:
+        chat_id = callback.message.chat.id
+        await activate_premium(chat_id, days=30)
+        await callback.answer("✅ Премиум активирован на 30 дней.", show_alert=True)
+        await cb_premium(callback)
+        return
+    await callback.answer(
+        "Оплата через Telegram Stars скоро будет доступна. "
+        "Пока напишите в поддержку.",
+        show_alert=True,
     )
-    await callback.answer()
 
 
 @router.callback_query(F.data == "premium_activate_test")
 async def cb_premium_activate_test(callback: CallbackQuery):
-    """Бесплатная активация — только для владельцев (ADMIN_IDS)."""
+    """Активировать премиум вручную — только для администраторов бота."""
     if callback.from_user.id not in ADMIN_IDS:
         await callback.answer("❌ Недостаточно прав.", show_alert=True)
         return
     chat_id = callback.message.chat.id
-    await activate_premium(chat_id, days=PREMIUM_DAYS)
+    await activate_premium(chat_id, days=30)
     await callback.answer("✅ Премиум активирован на 30 дней.", show_alert=True)
     await cb_premium(callback)

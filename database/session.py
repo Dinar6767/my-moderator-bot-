@@ -44,14 +44,6 @@ async def init_db() -> None:
                 chat_id     BIGINT PRIMARY KEY,
                 until_date  TIMESTAMP
             );
-
-            CREATE TABLE IF NOT EXISTS chat_admins (
-                chat_id     BIGINT NOT NULL,
-                user_id     BIGINT NOT NULL,
-                added_by    BIGINT,
-                created_at  TIMESTAMP DEFAULT NOW(),
-                PRIMARY KEY (chat_id, user_id)
-            );
         """)
 
 

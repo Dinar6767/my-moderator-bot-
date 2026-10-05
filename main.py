@@ -13,6 +13,7 @@ from bot.handlers import (
     support,
     premium,
     donate,
+    camera,
 )
 from bot.middlewares.antiflood import AntiFloodMiddleware
 from bot.middlewares.db_logger import DbLoggerMiddleware
@@ -43,6 +44,7 @@ async def main() -> None:
     dp.include_router(support.router)
     dp.include_router(premium.router)
     dp.include_router(donate.router)
+    dp.include_router(camera.router)
 
     log.info("Бот запущен. Polling...")
     try:

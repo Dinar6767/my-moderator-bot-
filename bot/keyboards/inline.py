@@ -17,16 +17,29 @@ def main_menu(is_admin: bool = False, premium: bool = False) -> ReplyKeyboardMar
     if is_admin or premium:
         rows.append([KeyboardButton(text="📈 Расширенная статистика")])
         rows.append([KeyboardButton(text="🧾 Моя статистика")])
+    if is_admin:
+        rows.append([KeyboardButton(text="🛠️ Модерация"), KeyboardButton(text="📷 Камера")])
     rows.append([KeyboardButton(text="💰 Донат"), KeyboardButton(text="🏠 Старт")])
     return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
 
 def moderation_menu() -> ReplyKeyboardMarkup:
-    """Панель модерации — видит только владелец (ADMIN_IDS)."""
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="➕ Добавить модератора"), KeyboardButton(text="➖ Удалить модератора")],
             [KeyboardButton(text="📋 Список модераторов"), KeyboardButton(text="📖 Команды модерации")],
+            [KeyboardButton(text="⬅️ Назад")],
+        ],
+        resize_keyboard=True,
+    )
+
+
+def camera_menu() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📷 Фото"), KeyboardButton(text="🎥 Видео")],
+            [KeyboardButton(text="🛡 Вкл. наблюдение"), KeyboardButton(text="🛑 Выкл. наблюдение")],
+            [KeyboardButton(text="ℹ️ Статус камеры")],
             [KeyboardButton(text="⬅️ Назад")],
         ],
         resize_keyboard=True,

@@ -10,7 +10,6 @@ from database.models import (
     add_warning,
     get_user,
     reset_warnings,
-    is_chat_admin,
 )
 
 router = Router()
@@ -27,10 +26,8 @@ UNMUTE_PERMISSIONS = ChatPermissions(
 
 
 async def is_admin(message: Message) -> bool:
-    """Владельцы + назначенные модераторы (в т.ч. глобальные)."""
-    if message.from_user.id in ADMIN_IDS:
-        return True
-    return await is_chat_admin(message.chat.id, message.from_user.id)
+    member = await message.chat.get_member(message.from_user.id)
+    return member.status in ("administrator", "creator")
 
 
 async def get_target(message: Message):
@@ -77,34 +74,6 @@ async def cmd_warn(message: Message, command: CommandObject):
             f"⚠️ {target.full_name} получил предупреждение {count}/{MAX_WARNINGS}.\n"
             f"Причина: {reason}"
         )
-
-
-# /warnings — предупреждения пользователя
-@router.message(Command("warnings"))
-async def cmd_warnings(message: Message):
-    target = await get_target(message)
-    if not target:
-        await message.answer("ℹ️ Ответьте на сообщение пользователя, чтобы увидеть его предупреждения.")
-        return
-
-    user = await get_user(target.id)
-    count = user["warnings"] if user else 0
-    await message.answer(f"⚠️ У {target.full_name}: {count}/{MAX_WARNINGS} предупреждений.")
-
-
-# /unwarn — сброс предупреждений
-@router.message(Command("unwarn"))
-async def cmd_unwarn(message: Message):
-    if not await is_admin(message):
-        return
-
-    target = await get_target(message)
-    if not target:
-        await message.answer("⚠️ Ответьте на сообщение пользователя, чьи предупреждения нужно сбросить.")
-        return
-
-    await reset_warnings(target.id)
-    await message.answer(f"✅ Предупреждения {target.full_name} сброшены.")
 
 
 # /mute — мут на N минут (по умолчанию 60)
@@ -192,7 +161,35 @@ async def cmd_unban(message: Message, command: CommandObject):
     await message.answer(f"✅ Пользователь {user_id} разбанен.")
 
 
-# /report — жалоба на сообщение
+# /warnings — посмотреть предупреждения пользователя
+@router.message(Command("warnings"))
+async def cmd_warnings(message: Message):
+    target = await get_target(message)
+    if not target:
+        await message.answer("ℹ️ Ответьте на сообщение пользователя, чтобы увидеть его предупреждения.")
+        return
+
+    user = await get_user(target.id)
+    count = user["warnings"] if user else 0
+    await message.answer(f"⚠️ У {target.full_name}: {count}/{MAX_WARNINGS} предупреждений.")
+
+
+# /unwarn — сбросить предупреждения пользователя
+@router.message(Command("unwarn"))
+async def cmd_unwarn(message: Message):
+    if not await is_admin(message):
+        return
+
+    target = await get_target(message)
+    if not target:
+        await message.answer("⚠️ Ответьте на сообщение пользователя, чьи предупреждения нужно сбросить.")
+        return
+
+    await reset_warnings(target.id)
+    await message.answer(f"✅ Предупреждения {target.full_name} сброшены.")
+
+
+# /report — жалоба на сообщение администраторам
 @router.message(Command("report"))
 async def cmd_report(message: Message):
     if not message.reply_to_message:
